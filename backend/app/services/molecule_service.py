@@ -1,30 +1,14 @@
 from rdkit import Chem
-from rdkit.Chem import Descriptors, rdMolDescriptors, AllChem
 from app.schemas.molecule import MoleculeProperties, LipinskiAnalysis
+from app.cheminformatics.molecule import calculate_descriptors 
 
 def calculate_molecule_properties(smiles: str) -> MoleculeProperties:
     mol = Chem.MolFromSmiles(smiles)
-    
     if mol is None:
         raise ValueError(f"Invalid SMILES string: {smiles}")
-
-    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
-    fp_list = list(fp)
-
-    return MoleculeProperties(
-        molecular_weight=Descriptors.MolWt(mol),
-        logp=Descriptors.MolLogP(mol),
-        tpsa=rdMolDescriptors.CalcTPSA(mol),
-        hbd=Descriptors.NumHDonors(mol),
-        hba=Descriptors.NumHAcceptors(mol),
-        rotatable_bonds=Descriptors.NumRotatableBonds(mol),
-        heavy_atom_count=mol.GetNumHeavyAtoms(),
-        ring_count=Descriptors.RingCount(mol),
-        aromatic_ring_count=Descriptors.NumAromaticRings(mol),
-        fraction_csp3=rdMolDescriptors.CalcFractionCSP3(mol),
-        formal_charge=Chem.GetFormalCharge(mol),
-        fingerprint=fp_list
-    )
+        
+    desc_dict = calculate_descriptors(mol)
+    return MoleculeProperties(**desc_dict)
 
 def evaluate_lipinski(props: MoleculeProperties) -> LipinskiAnalysis:
     violations = 0
